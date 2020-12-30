@@ -1,14 +1,17 @@
 import arsd.image : loadImageFromMemory;
+import arsd.simpleaudio : AudioOutputThread;
+import arsd.simpledisplay : Color, Image, Key, KeyEvent, MouseButton, MouseEvent, MouseEventType, OperatingSystemFont, Point, Rectangle, ScreenPainter,
+                            SimpleWindow, TextAlignment;
 import core.stdc.stdlib : system;
-import arsd.simpledisplay : Color, Image, MouseButton, MouseEvent, MouseEventType, OperatingSystemFont, Point, Rectangle, ScreenPainter, SimpleWindow,
-                            TextAlignment;
 import std.algorithm.searching : countUntil;
 import std.algorithm.mutation : remove;
 import std.array : join, replace;
+import std.file : exists;
 
 void main()
 {
     SimpleWindow window = new SimpleWindow(800, 600, "DMD");
+    AudioOutputThread music = AudioOutputThread(true);
 
     Image background = Image.fromMemoryImage(loadImageFromMemory(cast(immutable ubyte[]) import("background.jpeg")));
     // 'commandPhrase' is the phrase that will be sent to the system when you click "Compile", 'fileName' will contain the name of the source file
@@ -19,15 +22,15 @@ void main()
     Point cursorPosition = Point(245, 200);
     // here we create all of the Rectangles of the boxes you can click on
     Rectangle _32bits = Rectangle(200, 230, 220, 250), _64bits = Rectangle(200, 255, 220, 275), importingModules = Rectangle(200, 280, 220, 300),
-              optimized = Rectangle(200, 305, 220, 325), compile = Rectangle(200, 350, 300, 390);
+              optimized = Rectangle(200, 305, 220, 325), importingFiles = Rectangle(200, 330, 220, 350), compile = Rectangle(200, 375, 300, 415);
     // and finally we create the booleans which will guide the program telling what is happening
-    bool cursorShowTime, selected32bits, selected64bits, selectedImportingModules, selectedOptimized;
+    bool cursorShowTime, selected32bits, selected64bits, selectedImportingModules, selectedOptimized, selectedImportingFiles;
 
     window.eventLoop(250,
     {
-        // we set the painter and draw the background, cursor and what you've typed, "32 bit", "64 bits", "Importing modules" and "Optimized"
+        // we set the painter and draw the background, cursor and what you've typed, "32 bit", "64 bits", "Importing modules", "Optimized" and "Importing files"
         ScreenPainter painter = window.draw();
-        painter.fillColor = Color.blue(), painter.outlineColor = Color.black();
+        painter.fillColor = Color.red(), painter.outlineColor = Color.black();
 
         // the Compile rectangle and the word "Name" are part of the background image, hence we aren't drawing them
         painter.drawImage(Point(0, 0), background);
@@ -39,40 +42,49 @@ void main()
 
         painter.setFont(new OperatingSystemFont("Ubuntu", 13));
 
-        painter.drawRectangle(Point(200, 230), 20, 20);
+        painter.drawRectangle(_32bits.upperLeft(), 20, 20);
         painter.drawText(Point(_32bits.left + 22, _32bits.top), "32 bits", Point(_32bits.right + 30, _32bits.bottom),
                          TextAlignment.Left | TextAlignment.VerticalCenter);
         if (selected32bits)
         {
-            painter.drawLine(Point(200, 230), Point(220, 250));
-            painter.drawLine(Point(220, 230), Point(200, 250));
+            painter.drawLine(_32bits.upperLeft(), _32bits.lowerRight());
+            painter.drawLine(Point(_32bits.right, _32bits.top), Point(_32bits.left, _32bits.bottom));
         }
 
-        painter.drawRectangle(Point(200, 255), 20, 20);
+        painter.drawRectangle(_64bits.upperLeft(), 20, 20);
         painter.drawText(Point(_64bits.left + 22, _64bits.top), "64 bits", Point(_64bits.right + 30, _64bits.bottom),
                          TextAlignment.Left | TextAlignment.VerticalCenter);
         if (selected64bits)
         {
-            painter.drawLine(Point(200, 255), Point(220, 275));
-            painter.drawLine(Point(220, 255), Point(200, 275));
+            painter.drawLine(_64bits.upperLeft(), _64bits.lowerRight());
+            painter.drawLine(Point(_64bits.right, _64bits.top), Point(_64bits.left, _64bits.bottom));
         }
 
-        painter.drawRectangle(Point(200, 280), 20, 20);
+        painter.drawRectangle(importingModules.upperLeft(), 20, 20);
         painter.drawText(Point(importingModules.left + 22, importingModules.top), "Importing modules",
                          Point(importingModules.right + 30, importingModules.bottom), TextAlignment.Left | TextAlignment.VerticalCenter);
         if (selectedImportingModules)
         {
-            painter.drawLine(Point(200, 280), Point(220, 300));
-            painter.drawLine(Point(220, 280), Point(200, 300));
+            painter.drawLine(importingModules.upperLeft(), importingModules.lowerRight());
+            painter.drawLine(Point(importingModules.right, importingModules.top), Point(importingModules.left, importingModules.bottom));
         }
 
-        painter.drawRectangle(Point(200, 305), 20, 20);
+        painter.drawRectangle(optimized.upperLeft(), 20, 20);
         painter.drawText(Point(optimized.left + 22, optimized.top), "Optimized", Point(optimized.right + 30, optimized.bottom),
                          TextAlignment.Left | TextAlignment.VerticalCenter);
         if (selectedOptimized)
         {
-            painter.drawLine(Point(200, 305), Point(220, 325));
-            painter.drawLine(Point(220, 305), Point(200, 325));
+            painter.drawLine(optimized.upperLeft(), optimized.lowerRight());
+            painter.drawLine(Point(optimized.right, optimized.top), Point(optimized.left, optimized.bottom));
+        }
+
+        painter.drawRectangle(importingFiles.upperLeft(), 20, 20);
+        painter.drawText(Point(importingFiles.left + 22, importingFiles.top), "Importing files", Point(importingFiles.right + 30, importingFiles.bottom),
+                         TextAlignment.Left | TextAlignment.VerticalCenter);
+        if (selectedImportingFiles)
+        {
+            painter.drawLine(importingFiles.upperLeft(), importingFiles.lowerRight());
+            painter.drawLine(Point(importingFiles.right, importingFiles.top), Point(importingFiles.left, importingFiles.bottom));
         }
 
         // we update if the cursor will blink(true) or not(false)
@@ -135,14 +147,37 @@ void main()
                     options = options.remove(options.countUntil("-O"));
                 }
             }
+            else if (importingFiles.contains(Point(event.x, event.y)))
+            {
+                if (!selectedImportingFiles)
+                {
+                    selectedImportingFiles = true;
+                    options ~= "-J.";
+                }
+                else
+                {
+                    selectedImportingFiles = false;
+                    options = options.remove(options.countUntil("-J."));
+                }
+            }
             // this is when you click on Compile
             else if (compile.contains(Point(event.x, event.y)))
             {
                 commandPhrase = commandPhrase.replace("fileName", fileName);
                 // we must add the null terminator otherwise the pointer will go over the edge
                 commandPhrase ~= options.join(' ') ~ '\0';
-                // function system() only works with const char*
+                // we remove the file extension so it doesn't cause problems
+                if (fileName[$ - 2 .. $] == ".d")
+                    fileName = fileName[0 .. $ - 2];
+                // function system() only works with const char* and we remove the previous executable before creating the new
+                if (exists(fileName))
+                    system(cast(const char*) ("rm " ~ fileName));
                 system(cast(const char*) commandPhrase);
+                // we play a sound to tell if the compiling worked
+                if (exists(fileName))
+                    music.playWav("success.wav");
+                else
+                    music.playWav("failure.wav");
                 // we return it to default so it can be used again
                 commandPhrase = "dmd fileName ";
             }
@@ -160,10 +195,17 @@ void main()
                 cursorPosition.x -= 9;
             }
         }
-        else
+        // we don't want to add Enter to the file name, and here it's \r and not \n
+        else if (character != '\r')
         {
             fileName ~= character;
             cursorPosition.x += 9;
         }
+    },
+    // here you can run the executable after compiling(obviously) by hitting Enter
+    (KeyEvent event)
+    {
+        if (event.pressed && event.key == Key.Enter)
+            system(cast(const char*) ("./" ~ fileName ~ '\0'));
     });
 }
