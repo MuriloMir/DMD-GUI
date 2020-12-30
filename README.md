@@ -5,4 +5,4 @@ Just download the file .zip file into your project's folder and unzip it, type t
 
 It makes sounds to tell if the compile was successful or not.
 
-If you wanna compile it yourself, download the arsd library into the same folder.
+If you wanna compile it yourself, download the arsd library into the same folder and type in the terminal the command: dmd source -i -m64 -J. -O (notice there is a dot after J).
