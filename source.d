@@ -44,17 +44,16 @@ void main()
         painter.drawImage(Point(0, 0), background);
 
         // now we draw the cursor and what you've typed
-        painter.setFont(new OperatingSystemFont("Ubuntu Mono", 14));
+        painter.setFont(new OperatingSystemFont("Unispace", 19));
         if (cursorShowTime)
             painter.drawLine(cursorPosition, Point(cursorPosition.x, cursorPosition.y + 25));
         painter.drawText(Point(245, 203), fileName);
 
         // now we draw the boxes and their options
-        painter.setFont(new OperatingSystemFont("Ubuntu", 13));
+        painter.setFont(new OperatingSystemFont("Calibri", 22));
 
         painter.drawRectangle(_32bits.upperLeft(), 20, 20);
-        painter.drawText(Point(_32bits.left + 22, _32bits.top), "32 bits (-m32)", Point(_32bits.right + 30, _32bits.bottom),
-                         TextAlignment.Left | TextAlignment.VerticalCenter);
+        painter.drawText(Point(_32bits.left + 22, _32bits.top - 1), "32 bits (-m32)");
         if (selected32bits)
         {
             painter.drawLine(_32bits.upperLeft(), _32bits.lowerRight());
@@ -62,8 +61,7 @@ void main()
         }
 
         painter.drawRectangle(_64bits.upperLeft(), 20, 20);
-        painter.drawText(Point(_64bits.left + 22, _64bits.top), "64 bits (-m64)", Point(_64bits.right + 30, _64bits.bottom),
-                         TextAlignment.Left | TextAlignment.VerticalCenter);
+        painter.drawText(Point(_64bits.left + 22, _64bits.top - 1), "64 bits (-m64)");
         if (selected64bits)
         {
             painter.drawLine(_64bits.upperLeft(), _64bits.lowerRight());
@@ -71,8 +69,7 @@ void main()
         }
 
         painter.drawRectangle(importingModules.upperLeft(), 20, 20);
-        painter.drawText(Point(importingModules.left + 22, importingModules.top), "Importing modules (-i)",
-                         Point(importingModules.right + 30, importingModules.bottom), TextAlignment.Left | TextAlignment.VerticalCenter);
+        painter.drawText(Point(importingModules.left + 22, importingModules.top - 1), "Importing modules (-i)");
         if (selectedImportingModules)
         {
             painter.drawLine(importingModules.upperLeft(), importingModules.lowerRight());
@@ -80,8 +77,7 @@ void main()
         }
 
         painter.drawRectangle(optimized.upperLeft(), 20, 20);
-        painter.drawText(Point(optimized.left + 22, optimized.top), "Optimized (-O)", Point(optimized.right + 30, optimized.bottom),
-                         TextAlignment.Left | TextAlignment.VerticalCenter);
+        painter.drawText(Point(optimized.left + 22, optimized.top - 1), "Optimized (-O)");
         if (selectedOptimized)
         {
             painter.drawLine(optimized.upperLeft(), optimized.lowerRight());
@@ -89,8 +85,7 @@ void main()
         }
 
         painter.drawRectangle(importingFiles.upperLeft(), 20, 20);
-        painter.drawText(Point(importingFiles.left + 22, importingFiles.top), "Importing files (-J.)", Point(importingFiles.right + 30, importingFiles.bottom),
-                         TextAlignment.Left | TextAlignment.VerticalCenter);
+        painter.drawText(Point(importingFiles.left + 22, importingFiles.top - 1), "Importing files (-J.)");
         if (selectedImportingFiles)
         {
             painter.drawLine(importingFiles.upperLeft(), importingFiles.lowerRight());
@@ -98,8 +93,7 @@ void main()
         }
 
         painter.drawRectangle(release.upperLeft(), 20, 20);
-        painter.drawText(Point(release.left + 22, release.top), "Release (-release)", Point(release.right + 30, release.bottom),
-                         TextAlignment.Left | TextAlignment.VerticalCenter);
+        painter.drawText(Point(release.left + 22, release.top - 1), "Release (-release)");
         if (selectedRelease)
         {
             painter.drawLine(release.upperLeft(), release.lowerRight());
@@ -107,8 +101,7 @@ void main()
         }
 
         painter.drawRectangle(inline.upperLeft(), 20, 20);
-        painter.drawText(Point(inline.left + 22, inline.top), "Inline (-inline)", Point(inline.right + 30, inline.bottom),
-                         TextAlignment.Left | TextAlignment.VerticalCenter);
+        painter.drawText(Point(inline.left + 22, inline.top - 1), "Inline (-inline)");
         if (selectedInline)
         {
             painter.drawLine(inline.upperLeft(), inline.lowerRight());
@@ -116,8 +109,7 @@ void main()
         }
 
         painter.drawRectangle(disableBoundsCheck.upperLeft(), 20, 20);
-        painter.drawText(Point(disableBoundsCheck.left + 22, disableBoundsCheck.top), "Disable bounds check (-boundscheck=off)",
-                         Point(disableBoundsCheck.right + 30, disableBoundsCheck.bottom), TextAlignment.Left | TextAlignment.VerticalCenter);
+        painter.drawText(Point(disableBoundsCheck.left + 22, disableBoundsCheck.top - 1), "Disable bounds check (-boundscheck=off)");
         if (selectedDisableBoundsCheck)
         {
             painter.drawLine(disableBoundsCheck.upperLeft(), disableBoundsCheck.lowerRight());
@@ -258,14 +250,14 @@ void main()
             if (fileName.length > 0)
             {
                 fileName = fileName[0 .. $ - 1];
-                cursorPosition.x -= 9;
+                cursorPosition.x -= 10;
             }
         }
         // we don't want to add Enter to the file name
         else if (character != '\r' && character != '\n')
         {
             fileName ~= character;
-            cursorPosition.x += 9;
+            cursorPosition.x += 10;
         }
     },
     // here you can run the executable after compiling by hitting Enter
