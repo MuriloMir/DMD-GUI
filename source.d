@@ -44,13 +44,13 @@ void main()
         painter.drawImage(Point(0, 0), background);
 
         // now we draw the cursor and what you've typed
-        painter.setFont(new OperatingSystemFont("Unispace", 19));
+        painter.setFont(new OperatingSystemFont("Ubuntu Mono", 14));
         if (cursorShowTime)
             painter.drawLine(cursorPosition, Point(cursorPosition.x, cursorPosition.y + 25));
         painter.drawText(Point(245, 203), fileName);
 
         // now we draw the boxes and their options
-        painter.setFont(new OperatingSystemFont("Calibri", 22));
+        painter.setFont(new OperatingSystemFont("Ubuntu", 13));
 
         painter.drawRectangle(_32bits.upperLeft(), 20, 20);
         painter.drawText(Point(_32bits.left + 22, _32bits.top - 1), "32 bits (-m32)");
@@ -250,14 +250,14 @@ void main()
             if (fileName.length > 0)
             {
                 fileName = fileName[0 .. $ - 1];
-                cursorPosition.x -= 10;
+                cursorPosition.x -= 9;
             }
         }
         // we don't want to add Enter to the file name
         else if (character != '\r' && character != '\n')
         {
             fileName ~= character;
-            cursorPosition.x += 10;
+            cursorPosition.x += 9;
         }
     },
     // here you can run the executable after compiling by hitting Enter
