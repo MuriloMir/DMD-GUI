@@ -5,4 +5,4 @@ Just download the DMD GUI file .zip file into your project's folder and unzip it
 
 It makes sounds to tell if the compiling was successful or not.
 
-If you wanna compile it yourself, download the DMD GUI All Files and type in the terminal the command: dmd source -i -m64 -J. -O (notice there is a dot after J)
+If you wanna compile it yourself, download the DMD GUI All Files and type in the terminal the command: dmd source -i -m64 -J. -O (notice there is a dot after J).
