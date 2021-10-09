@@ -1,7 +1,7 @@
 import arsd.image : loadImageFromMemory;
 import arsd.simpleaudio : AudioOutputThread;
 import arsd.simpledisplay : Color, Image, Key, KeyEvent, MouseButton, MouseEvent, MouseEventType, OperatingSystemFont, Point, Rectangle, ScreenPainter,
-                            SimpleWindow, TextAlignment;
+                            SimpleWindow;
 import core.stdc.stdlib : system;
 import std.algorithm.mutation : remove;
 import std.algorithm.searching : countUntil;
