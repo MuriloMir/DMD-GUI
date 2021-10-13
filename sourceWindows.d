@@ -24,12 +24,12 @@ void main()
     Point cursorPosition = Point(245, 200);
     // here we create all of the Rectangles of the boxes you can click on
     Rectangle _32bits = Rectangle(200, 230, 220, 250), _64bits = Rectangle(200, 255, 220, 275), importingModules = Rectangle(200, 280, 220, 300),
-              optimized = Rectangle(200, 305, 220, 325), importingFiles = Rectangle(200, 330, 220, 350), compile = Rectangle(200, 375, 300, 415),
+              optimized = Rectangle(400, 305, 420, 325), importingFiles = Rectangle(200, 305, 220, 325), compile = Rectangle(200, 375, 300, 415),
               release = Rectangle(400, 230, 420, 250), inline = Rectangle(400, 255, 420, 275), disableBoundsCheck = Rectangle(400, 280, 420, 300),
               rdmd = Rectangle(304, 377, 361, 415);
     // here we load the sounds the GUI will play
-    immutable ubyte[] success = cast(immutable ubyte[]) import("success.wav"), failure = cast(immutable ubyte[]) import("failure.wav"),
-                      click = cast(immutable ubyte[]) import("click.ogg");
+    immutable ubyte[] click = cast(immutable ubyte[]) import("click.ogg"), failure = cast(immutable ubyte[]) import("failure.ogg"),
+                      success = cast(immutable ubyte[]) import("success.ogg");
     // and finally we create the booleans which will guide the program telling what is happening
     bool cursorShowTime, selected32bits, selected64bits, selectedImportingModules, selectedOptimized, selectedImportingFiles, selectedInline, selectedRelease,
          selectedDisableBoundsCheck;
@@ -125,6 +125,8 @@ void main()
         // notice we update the value of the boolean variable which tells if they are selected or not
         if (event.type == MouseEventType.buttonPressed && event.button == MouseButton.left)
             if (_32bits.contains(Point(event.x, event.y)))
+            {
+                music.playOgg(click);
                 if (!selected32bits)
                 {
                     options ~= "-m32";
@@ -135,7 +137,10 @@ void main()
                     options = remove(options, countUntil(options, "-m32"));
                     selected32bits = false;
                 }
+            }
             else if (_64bits.contains(Point(event.x, event.y)))
+            {
+                music.playOgg(click);
                 if (!selected64bits)
                 {
                     options ~= "-m64";
@@ -146,7 +151,10 @@ void main()
                     options = remove(options, countUntil(options, "-m64"));
                     selected64bits = false;
                 }
+            }
             else if (importingModules.contains(Point(event.x, event.y)))
+            {
+                music.playOgg(click);
                 if (!selectedImportingModules)
                 {
                     options ~= "-i";
@@ -157,7 +165,10 @@ void main()
                     options = remove(options, countUntil(options, "-i"));
                     selectedImportingModules = false;
                 }
+            }
             else if (optimized.contains(Point(event.x, event.y)))
+            {
+                music.playOgg(click);
                 if (!selectedOptimized)
                 {
                     options ~= "-O";
@@ -168,7 +179,10 @@ void main()
                     options = remove(options, countUntil(options, "-O"));
                     selectedOptimized = false;
                 }
+            }
             else if (importingFiles.contains(Point(event.x, event.y)))
+            {
+                music.playOgg(click);
                 if (!selectedImportingFiles)
                 {
                     options ~= "-J.";
@@ -179,7 +193,10 @@ void main()
                     options = remove(options, countUntil(options, "-J."));
                     selectedImportingFiles = false;
                 }
+            }
             else if (release.contains(Point(event.x, event.y)))
+            {
+                music.playOgg(click);
                 if (!selectedRelease)
                 {
                     options ~= "-release";
@@ -190,7 +207,10 @@ void main()
                     options = remove(options, countUntil(options, "-release"));
                     selectedRelease = false;
                 }
+            }
             else if (inline.contains(Point(event.x, event.y)))
+            {
+                music.playOgg(click);
                 if (!selectedInline)
                 {
                     options ~= "-inline";
@@ -201,7 +221,10 @@ void main()
                     options = remove(options, countUntil(options, "-inline"));
                     selectedInline = false;
                 }
+            }
             else if (disableBoundsCheck.contains(Point(event.x, event.y)))
+            {
+                music.playOgg(click);
                 if (!selectedDisableBoundsCheck)
                 {
                     options ~= "-boundscheck=off";
@@ -212,6 +235,7 @@ void main()
                     options = remove(options, countUntil(options, "-boundscheck=off"));
                     selectedDisableBoundsCheck = false;
                 }
+            }
             // this is when you click on Compile
             else if (compile.contains(Point(event.x, event.y)))
             {
@@ -228,9 +252,9 @@ void main()
                 system(cast(const char*) commandPhrase);
                 // we play a sound to tell if the compiling worked
                 if (exists(fileName))
-                    music.playWav(success);
+                    music.playOgg(success);
                 else
-                    music.playWav(failure);
+                    music.playOgg(failure);
                 // we return it to default so it can be used again
                 commandPhrase = "dmd fileName ";
             }
