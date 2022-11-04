@@ -253,8 +253,8 @@ void main()
                     cursorPosition.x -= 18;
                 }
                 // function system() only works with const char* and we remove the previous executable before creating the new
-                if (exists(fileName))
-                    system(cast(const char*) ("rm " ~ fileName));
+                if (exists(fileName ~ ".exe"))
+                    system(cast(const char*) ("del " ~ fileName ~ ".exe"));
                 system(cast(const char*) commandPhrase);
                 // we play a sound to tell if the compiling worked
                 if (exists(fileName ~ ".exe"))
