@@ -1,3 +1,6 @@
+pragma(linkerDirective, "/subsystem:windows");
+pragma(linkerDirective, "/entry:mainCRTStartup");
+
 import arsd.image : loadImageFromMemory;
 import arsd.simpleaudio : AudioOutputThread;
 import arsd.simpledisplay : Color, Image, Key, KeyEvent, MouseButton, MouseEvent, MouseEventType, OperatingSystemFont, Point, Rectangle, ScreenPainter,
