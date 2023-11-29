@@ -1,5 +1,4 @@
-pragma(linkerDirective, "/subsystem:windows");
-pragma(linkerDirective, "/entry:mainCRTStartup");
+// This software will be a GUI for the DMD compiler.
 
 import arsd.image : loadImageFromMemory;
 import arsd.simpleaudio : AudioOutputThread;
@@ -11,289 +10,239 @@ import std.algorithm.searching : countUntil;
 import std.array : join, replace;
 import std.file : exists;
 
+// this is the data type for files we will be embedding into the executable
+alias memory = immutable ubyte[];
+
+// this function will draw the box along with its option phrase
+void drawBox(Rectangle box, string optionText, bool selected, ScreenPainter painter)
+{
+    // draw the box
+    painter.drawRectangle(box.upperLeft(), 20, 20);
+    // draw the text of the option
+    painter.drawText(Point(box.left + 22, box.top - 1), optionText);
+
+    // if you've selected the box
+    if (selected)
+    {
+        // draw the first line to start the X
+        painter.drawLine(box.upperLeft(), box.lowerRight());
+        // draw the second line to complete the X
+        painter.drawLine(Point(box.right, box.top), Point(box.left, box.bottom));
+    }
+}
+
+// this function will allow you to select or undo the selection of a box
+void interactWithBox(string optionText, ref bool selected, ref string[] options, AudioOutputThread music, memory click)
+{
+    // play the click sound
+    music.playOgg(click);
+
+    // if it wasn't previously selected
+    if (!selected)
+    {
+        // add it to the array of options
+        options ~= optionText;
+        // set its boolean to true
+        selected = true;
+    }
+    // if it was already selected
+    else
+    {
+        // remove it from the array of options
+        options = remove(options, countUntil(options, optionText));
+        // set its boolean to false
+        selected = false;
+    }
+}
+
 void main()
 {
-    // here we start the GUI and the audio thread
+    // create the GUI
     SimpleWindow window = new SimpleWindow(800, 600, "DMD");
+    // create the audio thread
     AudioOutputThread music = AudioOutputThread(true);
-
-    // here we load the background image
-    Image background = Image.fromMemoryImage(loadImageFromMemory(cast(immutable ubyte[]) import("background.jpeg")));
-    // 'commandPhrase' is the phrase that will be sent to the system when you click "Compile", 'fileName' will contain the name of the source file
-    string commandPhrase = "dmd fileName ", fileName = "";
-    // here we will store the options you have selected
+    // load the background image
+    Image background = Image.fromMemoryImage(loadImageFromMemory(cast(memory) import("background.jpeg")));
+    // 'commandPhrase' is the phrase that will be sent to the system when you click on "Compile", 'fileName' will contain the name of the source file
+    string commandPhrase = "dmd fileName ", fileName;
+    // this array will store the options you have selected
     string[] options;
-    // where the cursor will be when you type the name of the file to be compiled
+    // this will store the place where the cursor will be when you type the name of the file to be compiled
     Point cursorPosition = Point(245, 200);
-    // here we create all of the Rectangles of the boxes you can click on
-    Rectangle _32bits = Rectangle(200, 230, 220, 250), _64bits = Rectangle(200, 255, 220, 275), importingModules = Rectangle(200, 280, 220, 300),
-              optimized = Rectangle(400, 305, 420, 325), importingFiles = Rectangle(200, 305, 220, 325), compile = Rectangle(200, 375, 300, 415),
-              release = Rectangle(400, 230, 420, 250), inline = Rectangle(400, 255, 420, 275), disableBoundsCheck = Rectangle(400, 280, 420, 300),
-              rdmd = Rectangle(304, 377, 361, 415);
-    // here we load the sounds the GUI will play
-    immutable ubyte[] click = cast(immutable ubyte[]) import("click.ogg"), failure = cast(immutable ubyte[]) import("failure.ogg"),
-                      success = cast(immutable ubyte[]) import("success.ogg");
-    // and finally we create the booleans which will guide the program telling what is happening
-    bool cursorShowTime, selected32bits, selected64bits, selectedImportingModules, selectedOptimized, selectedImportingFiles, selectedInline, selectedRelease,
-         selectedDisableBoundsCheck;
+    // load the sounds the GUI will play
+    memory click = cast(memory) import("click.ogg"), failure = cast(memory) import("failure.ogg"), success = cast(memory) import("success.ogg");
+    // create the booleans which will tell the event loop what is happening
+    bool cursorShowTime, selected32bits, selected64bits, selectedAddDebugInfo, selectedDisableBoundsCheck, selectedImportFiles,
+         selectedImportModules, selectedInline, selectedGenerateJson, selectedOptimized, selectedRelease;
 
+    // create all the Rectangles of the boxes you can click on, they are written here in the same order you see them when you run the software
+    Rectangle _64bits = Rectangle(200, 240, 220, 260),          _32bits = Rectangle(400, 240, 420, 260),
+              importModules = Rectangle(200, 265, 220, 285),    release = Rectangle(400, 265, 420, 285),
+              importFiles = Rectangle(200, 290, 220, 310),      inline = Rectangle(400, 290, 420, 310),
+              optimized = Rectangle(200, 315, 220, 335),        disableBoundsCheck = Rectangle(400, 315, 420, 335),
+              addDebugInfo = Rectangle(200, 340, 220, 360),     generateJson = Rectangle(400, 340, 420, 360),
+              compile = Rectangle(200, 385, 300, 425),          rdmd = Rectangle(304, 387, 361, 425);
+
+    // start the event loop
     window.eventLoop(250,
     {
-        // we set the painter and draw the background
+        // create the painter
         ScreenPainter painter = window.draw();
+        // choose the colors
         painter.fillColor = Color.red(), painter.outlineColor = Color.black();
-
-        // the Compile rectangle and the word "Name" are part of the background image, hence we aren't drawing them
+        // draw the background image, which already contains the "Compile" rectangle and the word "Name"
         painter.drawImage(Point(0, 0), background);
+        // choose the font to draw the name of the file, we use a monospace font to make it easy to move the cursor around
+        painter.setFont(new OperatingSystemFont("Noto Mono", 20));
 
-        // now we draw the cursor and what you've typed
-        painter.setFont(new OperatingSystemFont("Calibri", 25));
+        // if it is time to show the cursor (remember it blinks, therefore it will be displayed and omitted repeatedly)
         if (cursorShowTime)
+            // draw the cursor
             painter.drawLine(cursorPosition, Point(cursorPosition.x, cursorPosition.y + 25));
+
+        // draw what you've typed
         painter.drawText(Point(245, 200), fileName);
 
-        // now we draw the boxes and their options
+        // choose another font to draw the options of the boxes
         painter.setFont(new OperatingSystemFont("Calibri", 22));
 
-        painter.drawRectangle(_32bits.upperLeft(), 20, 20);
-        painter.drawText(Point(_32bits.left + 22, _32bits.top - 1), "32 bits (-m32)");
-        if (selected32bits)
-        {
-            painter.drawLine(_32bits.upperLeft(), _32bits.lowerRight());
-            painter.drawLine(Point(_32bits.right, _32bits.top), Point(_32bits.left, _32bits.bottom));
-        }
+        // draw the 64 bits box
+        drawBox(_64bits, "64 bits (-m64)", selected64bits, painter);
+        // draw the Import modules box
+        drawBox(importModules, "Import modules (-i)", selectedImportModules, painter);
+        // draw the Import files box
+        drawBox(importFiles, "Import files (-J.)", selectedImportFiles, painter);
+        // draw the Optimized box
+        drawBox(optimized, "Optimized (-O)", selectedOptimized, painter);
+        // draw the Add debug info box
+        drawBox(addDebugInfo, "Add debug info (-g)", selectedAddDebugInfo, painter);
+        // draw the 32 bits box
+        drawBox(_32bits, "32 bits (-m32)", selected32bits, painter);
+        // draw the Release box
+        drawBox(release, "Release (-release)", selectedRelease, painter);
+        // draw Inline box
+        drawBox(inline, "Inline (-inline)", selectedInline, painter);
+        // draw the Disable bounds check box
+        drawBox(disableBoundsCheck, "Disable bounds check (-boundscheck=off)", selectedDisableBoundsCheck, painter);
+        // draw the Generate JSON box
+        drawBox(generateJson, "Generate JSON (-X)", selectedGenerateJson, painter);
 
-        painter.drawRectangle(_64bits.upperLeft(), 20, 20);
-        painter.drawText(Point(_64bits.left + 22, _64bits.top - 1), "64 bits (-m64)");
-        if (selected64bits)
-        {
-            painter.drawLine(_64bits.upperLeft(), _64bits.lowerRight());
-            painter.drawLine(Point(_64bits.right, _64bits.top), Point(_64bits.left, _64bits.bottom));
-        }
-
-        painter.drawRectangle(importingModules.upperLeft(), 20, 20);
-        painter.drawText(Point(importingModules.left + 22, importingModules.top - 1), "Importing modules (-i)");
-        if (selectedImportingModules)
-        {
-            painter.drawLine(importingModules.upperLeft(), importingModules.lowerRight());
-            painter.drawLine(Point(importingModules.right, importingModules.top), Point(importingModules.left, importingModules.bottom));
-        }
-
-        painter.drawRectangle(optimized.upperLeft(), 20, 20);
-        painter.drawText(Point(optimized.left + 22, optimized.top - 1), "Optimized (-O)");
-        if (selectedOptimized)
-        {
-            painter.drawLine(optimized.upperLeft(), optimized.lowerRight());
-            painter.drawLine(Point(optimized.right, optimized.top), Point(optimized.left, optimized.bottom));
-        }
-
-        painter.drawRectangle(importingFiles.upperLeft(), 20, 20);
-        painter.drawText(Point(importingFiles.left + 22, importingFiles.top - 1), "Importing files (-J.)");
-        if (selectedImportingFiles)
-        {
-            painter.drawLine(importingFiles.upperLeft(), importingFiles.lowerRight());
-            painter.drawLine(Point(importingFiles.right, importingFiles.top), Point(importingFiles.left, importingFiles.bottom));
-        }
-
-        painter.drawRectangle(release.upperLeft(), 20, 20);
-        painter.drawText(Point(release.left + 22, release.top - 1), "Release (-release)");
-        if (selectedRelease)
-        {
-            painter.drawLine(release.upperLeft(), release.lowerRight());
-            painter.drawLine(Point(release.right, release.top), Point(release.left, release.bottom));
-        }
-
-        painter.drawRectangle(inline.upperLeft(), 20, 20);
-        painter.drawText(Point(inline.left + 22, inline.top - 1), "Inline (-inline)");
-        if (selectedInline)
-        {
-            painter.drawLine(inline.upperLeft(), inline.lowerRight());
-            painter.drawLine(Point(inline.right, inline.top), Point(inline.left, inline.bottom));
-        }
-
-        painter.drawRectangle(disableBoundsCheck.upperLeft(), 20, 20);
-        painter.drawText(Point(disableBoundsCheck.left + 22, disableBoundsCheck.top - 1), "Disable bounds check (-boundscheck=off)");
-        if (selectedDisableBoundsCheck)
-        {
-            painter.drawLine(disableBoundsCheck.upperLeft(), disableBoundsCheck.lowerRight());
-            painter.drawLine(Point(disableBoundsCheck.right, disableBoundsCheck.top), Point(disableBoundsCheck.left, disableBoundsCheck.bottom));
-        }
-
-        // we update if the cursor will blink(true) or not(false)
+        // update if the cursor will blink (true) or not (false)
         cursorShowTime = !cursorShowTime;
     },
-    // this allows you to click on the boxes, the order is the same as above
+    // register mouse events
     (MouseEvent event)
     {
-        // notice we update the value of the boolean variable which tells if they are selected or not
+        // if you left-click
         if (event.type == MouseEventType.buttonPressed && event.button == MouseButton.left)
-            if (_32bits.contains(Point(event.x, event.y)))
-            {
-                music.playOgg(click);
-                if (!selected32bits)
-                {
-                    options ~= "-m32";
-                    selected32bits = true;
-                }
-                else
-                {
-                    options = remove(options, countUntil(options, "-m32"));
-                    selected32bits = false;
-                }
-            }
-            else if (_64bits.contains(Point(event.x, event.y)))
-            {
-                music.playOgg(click);
-                if (!selected64bits)
-                {
-                    options ~= "-m64";
-                    selected64bits = true;
-                }
-                else
-                {
-                    options = remove(options, countUntil(options, "-m64"));
-                    selected64bits = false;
-                }
-            }
-            else if (importingModules.contains(Point(event.x, event.y)))
-            {
-                music.playOgg(click);
-                if (!selectedImportingModules)
-                {
-                    options ~= "-i";
-                    selectedImportingModules = true;
-                }
-                else
-                {
-                    options = remove(options, countUntil(options, "-i"));
-                    selectedImportingModules = false;
-                }
-            }
+            // if you click on the 64 bits box
+            if (_64bits.contains(Point(event.x, event.y)))
+                interactWithBox("-m64", selected64bits, options, music, click);
+            // if you click on the Import modules box
+            else if (importModules.contains(Point(event.x, event.y)))
+                interactWithBox("-i", selectedImportModules, options, music, click);
+            // if you click on the Import files box
+            else if (importFiles.contains(Point(event.x, event.y)))
+                interactWithBox("-J.", selectedImportFiles, options, music, click);
+            // if you click on the Optimized box
             else if (optimized.contains(Point(event.x, event.y)))
-            {
-                music.playOgg(click);
-                if (!selectedOptimized)
-                {
-                    options ~= "-O";
-                    selectedOptimized = true;
-                }
-                else
-                {
-                    options = remove(options, countUntil(options, "-O"));
-                    selectedOptimized = false;
-                }
-            }
-            else if (importingFiles.contains(Point(event.x, event.y)))
-            {
-                music.playOgg(click);
-                if (!selectedImportingFiles)
-                {
-                    options ~= "-J.";
-                    selectedImportingFiles = true;
-                }
-                else
-                {
-                    options = remove(options, countUntil(options, "-J."));
-                    selectedImportingFiles = false;
-                }
-            }
+                interactWithBox("-O", selectedOptimized, options, music, click);
+            // if you click on the Add debug info box
+            else if (addDebugInfo.contains(Point(event.x, event.y)))
+                interactWithBox("-g", selectedAddDebugInfo, options, music, click);
+            // if you click on the 32 bits box
+            else if (_32bits.contains(Point(event.x, event.y)))
+                interactWithBox("-m32", selected32bits, options, music, click);
+            // if you click on the Release box
             else if (release.contains(Point(event.x, event.y)))
-            {
-                music.playOgg(click);
-                if (!selectedRelease)
-                {
-                    options ~= "-release";
-                    selectedRelease = true;
-                }
-                else
-                {
-                    options = remove(options, countUntil(options, "-release"));
-                    selectedRelease = false;
-                }
-            }
+                interactWithBox("-release", selectedRelease, options, music, click);
+            // if you click on the Inline box
             else if (inline.contains(Point(event.x, event.y)))
-            {
-                music.playOgg(click);
-                if (!selectedInline)
-                {
-                    options ~= "-inline";
-                    selectedInline = true;
-                }
-                else
-                {
-                    options = remove(options, countUntil(options, "-inline"));
-                    selectedInline = false;
-                }
-            }
+                interactWithBox("-inline", selectedInline, options, music, click);
+            // if you click on the Disable bounds check box
             else if (disableBoundsCheck.contains(Point(event.x, event.y)))
+                interactWithBox("-boundscheck=off", selectedDisableBoundsCheck, options, music, click);
+            // if you click on the Generate JSON box
+            else if (generateJson.contains(Point(event.x, event.y)))
+                interactWithBox("-X", selectedGenerateJson, options, music, click);
+            // if you click on the Compile button and you've typed the name of the file to be compiled
+            else if (compile.contains(Point(event.x, event.y)) && fileName != "")
             {
+                // play the click sound
                 music.playOgg(click);
-                if (!selectedDisableBoundsCheck)
-                {
-                    options ~= "-boundscheck=off";
-                    selectedDisableBoundsCheck = true;
-                }
-                else
-                {
-                    options = remove(options, countUntil(options, "-boundscheck=off"));
-                    selectedDisableBoundsCheck = false;
-                }
-            }
-            // this is when you click on Compile
-            else if (compile.contains(Point(event.x, event.y)))
-            {
-                music.playOgg(click);
+                // add the file name to the command phrase
                 commandPhrase = replace(commandPhrase, "fileName", fileName);
-                // we must add the null terminator otherwise the pointer will go over the edge
-                commandPhrase ~= join(options, ' ') ~ '\0';
-                // we remove the file extension so it doesn't cause problems
+                // build the complete phrase
+                commandPhrase ~= join(options, ' ');
+
+                // if you've typed the extension ".d" in the file name
                 if (fileName[$ - 2 .. $] == ".d")
                 {
+                    // remove the file extension, so it doesn't cause problems
                     fileName = fileName[0 .. $ - 2];
-                    cursorPosition.x -= 18;
+                    // update the position of the cursor
+                    cursorPosition.x -= 20;
                 }
-                // function system() only works with const char* and we remove the previous executable before creating the new
+
+                // if there is already an executable with the name of your source code file
                 if (exists(fileName ~ ".exe"))
+                    // the function system() only works with const char* and we remove the previous executable before creating the new
                     system(cast(const char*) ("del " ~ fileName ~ ".exe"));
+
+                // compile the source code file
                 system(cast(const char*) commandPhrase);
-                // we play a sound to tell if the compiling worked
+
+                // if the executable was created successfully
                 if (exists(fileName ~ ".exe"))
+                    // play the success sound
                     music.playOgg(success);
+                // if the executable failed to be created
                 else
+                    // play the failure sound
                     music.playOgg(failure);
-                // we return it to default so it can be used again
+
+                // return the command phrase to the initial value, so it can be used again
                 commandPhrase = "dmd fileName ";
             }
-            else if (rdmd.contains(Point(event.x, event.y)))
+            // if you click on the rdmd button and you've typed the name of the file to be compiled
+            else if (rdmd.contains(Point(event.x, event.y)) && fileName != "")
             {
+                // play the click sound
                 music.playOgg(click);
-                system(cast(const char*) ("rdmd " ~ fileName ~ '\0'));
+                // compile and run the source code file, flags don't work with rdmd
+                system(cast(const char*) ("rdmd " ~ fileName));
             }
     },
-    // here is when you type the name of the file
-    (dchar character)
-    {
-        // we allow you to erase it if you hit Backspace and we update the position of the cursor as you type
-        if (character == '\b')
-        {
-            // you can't erase if it's empty
-            if (fileName.length > 0)
-            {
-                fileName = fileName[0 .. $ - 1];
-                cursorPosition.x -= 9;
-            }
-        }
-        // we don't want to add Enter to the file name
-        else if (character != '\r' && character != '\n')
-        {
-            fileName ~= character;
-            cursorPosition.x += 9;
-        }
-    },
-    // here you can run the executable after compiling by hitting Enter
+    // register key events
     (KeyEvent event)
     {
-        if (event.pressed && event.key == Key.Enter)
+        // if you press Enter and you've typed the name of the file to be compiled
+        if (event.pressed && event.key == Key.Enter && fileName != "")
+            // run the executable (after you've compiled it)
             system(cast(const char*) (fileName ~ ".exe"));
+    },
+    // register what you've typed
+    (dchar character)
+    {
+        // if you press Backspace
+        if (character == '\b')
+        {
+            // if there is anything to be erased
+            if (fileName != "")
+            {
+                // erase the last character of the file name
+                fileName = fileName[0 .. $ - 1];
+                // update the position of the cursor
+                cursorPosition.x -= 10;
+            }
+        }
+        // if you press any key apart from Enter and Tab
+        else if (character != '\r' && character != '\n' && character != '\t')
+        {
+            // add the letter to the name of the file
+            fileName ~= character;
+            // update the position of the cursor
+            cursorPosition.x += 10;
+        }
     });
 }
