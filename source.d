@@ -9,6 +9,7 @@ import std.algorithm.mutation : remove;
 import std.algorithm.searching : countUntil;
 import std.array : join, replace;
 import std.file : exists;
+import std.stdio : writeln;
 
 // this is the data type for files we will be embedding into the executable
 alias memory = immutable ubyte[];
@@ -194,8 +195,12 @@ void main()
 
                 // if the executable was created successfully
                 if (exists(fileName ~ ".exe"))
+                {
                     // play the success sound
                     music.playOgg(success);
+                    // write in the terminal a phrase telling the user it was successful
+                    writeln("Compiled successfully.");
+                }
                 // if the executable failed to be created
                 else
                     // play the failure sound
