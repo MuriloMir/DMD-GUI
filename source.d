@@ -62,6 +62,8 @@ void main()
     SimpleWindow window = new SimpleWindow(800, 600, "DMD");
     // create the audio thread
     AudioOutputThread music = AudioOutputThread(true);
+    // create the 2 fonts we will use in the software
+    OperatingSystemFont commandFont = new OperatingSystemFont("Noto Mono", 20), optionsFont = new OperatingSystemFont("Calibri", 22);
     // load the background image
     Image background = Image.fromMemoryImage(loadImageFromMemory(cast(memory) import("background.jpeg")));
     // 'commandPhrase' is the phrase that will be sent to the system when you click on "Compile", 'fileName' will contain the name of the source file
@@ -94,7 +96,7 @@ void main()
         // draw the background image, which already contains the "Compile" rectangle and the word "Name"
         painter.drawImage(Point(0, 0), background);
         // choose the font to draw the name of the file, we use a monospace font to make it easy to move the cursor around
-        painter.setFont(new OperatingSystemFont("Noto Mono", 20));
+        painter.setFont(commandFont);
 
         // if it is time to show the cursor (remember it blinks, therefore it will be displayed and omitted repeatedly)
         if (cursorShowTime)
@@ -105,7 +107,7 @@ void main()
         painter.drawText(Point(245, 200), fileName);
 
         // choose another font to draw the options of the boxes
-        painter.setFont(new OperatingSystemFont("Calibri", 22));
+        painter.setFont(optionsFont);
 
         // draw the 64 bits box
         drawBox(_64bits, "64 bits (-m64)", selected64bits, painter);
