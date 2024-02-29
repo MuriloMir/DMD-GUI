@@ -12,7 +12,7 @@ import std.file : exists;
 import std.stdio : writeln;
 
 // this is the data type for files we will be embedding into the executable
-alias memory = immutable ubyte[];
+alias memory = const ubyte[];
 
 // this function will draw the box along with its option phrase
 void drawBox(Rectangle box, string optionText, bool selected, ScreenPainter painter)
