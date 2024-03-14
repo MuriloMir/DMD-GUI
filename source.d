@@ -11,8 +11,8 @@ import std.array : join, replace;
 import std.file : exists;
 import std.stdio : writeln;
 
-// this is the data type for files we will be embedding into the executable
-alias memory = const ubyte[];
+// this is the data type for files we will be embedding into the executable, it has to be immutable because the arsd library demands it
+alias memory = immutable ubyte[];
 
 // this function will draw the box along with its option phrase
 void drawBox(Rectangle box, string optionText, bool selected, ScreenPainter painter)
@@ -63,7 +63,17 @@ void main()
     // create the audio thread
     AudioOutputThread music = AudioOutputThread(true);
     // create the 2 fonts we will use in the software
-    OperatingSystemFont commandFont = new OperatingSystemFont("Noto Mono", 20), optionsFont = new OperatingSystemFont("Calibri", 22);
+    OperatingSystemFont commandFont, optionsFont;
+
+    // if you are on Windows
+    version (Windows)
+        // use these fonts
+        commandFont = new OperatingSystemFont("Noto Mono", 20), optionsFont = new OperatingSystemFont("Calibri", 22);
+    // if you are on Linux
+    else
+        // use these fonts
+        commandFont = new OperatingSystemFont("Ubuntu Mono", 15), optionsFont = new OperatingSystemFont("Ubuntu", 13);
+
     // load the background image
     Image background = Image.fromMemoryImage(loadImageFromMemory(cast(memory) import("background.jpeg")));
     // 'commandPhrase' is the phrase that will be sent to the system when you click on "Compile", 'fileName' will contain the name of the source file
@@ -76,7 +86,7 @@ void main()
     memory click = cast(memory) import("click.ogg"), failure = cast(memory) import("failure.ogg"), success = cast(memory) import("success.ogg");
     // create the booleans which will tell the event loop what is happening
     bool cursorShowTime, selected32bits, selected64bits, selectedAddDebugInfo, selectedDisableBoundsCheck, selectedImportFiles,
-         selectedImportModules, selectedInline, selectedGenerateJson, selectedOptimized, selectedRelease;
+         selectedImportModules, selectedInline, selectedGenerateJson, selectedOptimize, selectedRelease;
 
     // create all the Rectangles of the boxes you can click on, they are written here in the same order you see them when you run the software
     Rectangle _64bits = Rectangle(200, 240, 220, 260),          _32bits = Rectangle(400, 240, 420, 260),
@@ -115,8 +125,8 @@ void main()
         drawBox(importModules, "Import modules (-i)", selectedImportModules, painter);
         // draw the Import files box
         drawBox(importFiles, "Import files (-J.)", selectedImportFiles, painter);
-        // draw the Optimized box
-        drawBox(optimized, "Optimized (-O)", selectedOptimized, painter);
+        // draw the Optimize box
+        drawBox(optimized, "Optimize (-O)", selectedOptimize, painter);
         // draw the Add debug info box
         drawBox(addDebugInfo, "Add debug info (-g)", selectedAddDebugInfo, painter);
         // draw the 32 bits box
@@ -147,9 +157,9 @@ void main()
             // if you click on the Import files box
             else if (importFiles.contains(Point(event.x, event.y)))
                 interactWithBox("-J.", selectedImportFiles, options, music, click);
-            // if you click on the Optimized box
+            // if you click on the Optimize box
             else if (optimized.contains(Point(event.x, event.y)))
-                interactWithBox("-O", selectedOptimized, options, music, click);
+                interactWithBox("-O", selectedOptimize, options, music, click);
             // if you click on the Add debug info box
             else if (addDebugInfo.contains(Point(event.x, event.y)))
                 interactWithBox("-g", selectedAddDebugInfo, options, music, click);
@@ -171,15 +181,8 @@ void main()
             // if you click on the Compile button and you've typed the name of the file to be compiled
             else if (compile.contains(Point(event.x, event.y)) && fileName != "")
             {
-                // play the click sound
-                music.playOgg(click);
-                // add the file name to the command phrase
-                commandPhrase = replace(commandPhrase, "fileName", fileName);
-                // build the complete phrase
-                commandPhrase ~= join(options, ' ');
-
-                // if you've typed the extension ".d" in the file name
-                if (fileName[$ - 2 .. $] == ".d")
+                // if the file name is more than 2 letters long and you've typed the extension ".d" in the file name
+                if (fileName.length > 2 && fileName[$ - 2 .. $] == ".d")
                 {
                     // remove the file extension, so it doesn't cause problems
                     fileName = fileName[0 .. $ - 2];
@@ -187,26 +190,73 @@ void main()
                     cursorPosition.x -= 20;
                 }
 
-                // if there is already an executable with the name of your source code file
-                if (exists(fileName ~ ".exe"))
-                    // the function system() only works with const char* and we remove the previous executable before creating the new
-                    system(cast(const char*) ("del " ~ fileName ~ ".exe"));
+                // play the click sound
+                music.playOgg(click);
+                // add the file name to the command phrase, notice we put it between "" to work in case of a compound name, such as "source 1.d"
+                commandPhrase = replace(commandPhrase, "fileName", '\"' ~ fileName ~ '\"');
+                // build the complete phrase
+                commandPhrase ~= join(options, ' ');
 
-                // compile the source code file
-                system(cast(const char*) commandPhrase);
-
-                // if the executable was created successfully
-                if (exists(fileName ~ ".exe"))
+                // if you are on Windows
+                version (Windows)
                 {
-                    // play the success sound
-                    music.playOgg(success);
-                    // write in the terminal a phrase telling the user it was successful
-                    writeln("Compiled successfully.");
+                    // clear the terminal, the 'system()' function only takes 'const char*'
+                    system(cast(const char*) ("cls"));
+
+                    // if there is already an executable with the name of your source code file
+                    if (exists(fileName ~ ".exe"))
+                        // remove the previous executable before creating the new, the 'system()' function only takes 'const char*',
+                        // notice the file name must be between "" to work properly, it also requires the null character at the end
+                        system(cast(const char*) ("del \"" ~ fileName ~ ".exe\"\0"));
                 }
-                // if the executable failed to be created
+                // if you are on Linux
                 else
-                    // play the failure sound
-                    music.playOgg(failure);
+                {
+                    // clear the terminal, the 'system()' function only takes 'const char*'
+                    system(cast(const char*) ("clear"));
+
+                    // if there is already an executable with the name of your source code file
+                    if (exists(fileName))
+                    {
+                        // remove the previous executable before creating the new, the 'system()' function only takes 'const char*',
+                        // notice the file name must be between "" to work properly, it also requires the null character at the end
+                        system(cast(const char*) ("rm \"" ~ fileName ~ "\"\0"));
+                    }
+                }
+
+                // compile the source code file, the 'system()' function only takes 'const char*', it requires the null character at the end, to prevent bugs
+                system(cast(const char*) (commandPhrase ~ '\0'));
+
+                // if you are on Windows
+                version (Windows)
+                {
+                    // if the executable was created successfully
+                    if (exists(fileName ~ ".exe"))
+                    {
+                        // play the success sound
+                        music.playOgg(success);
+                        // write in the terminal a phrase telling the user it was successful
+                        writeln("Compiled successfully.");
+                    }
+                    // if the executable failed to be created
+                    else
+                        // play the failure sound
+                        music.playOgg(failure);
+                }
+                // if you are on Linux
+                else
+                    // if the executable was created successfully
+                    if (exists(fileName))
+                    {
+                        // play the success sound
+                        music.playOgg(success);
+                        // write in the terminal a phrase telling the user it was successful
+                        writeln("Compiled successfully.");
+                    }
+                    // if the executable failed to be created
+                    else
+                        // play the failure sound
+                        music.playOgg(failure);
 
                 // return the command phrase to the initial value, so it can be used again
                 commandPhrase = "dmd fileName ";
@@ -216,8 +266,25 @@ void main()
             {
                 // play the click sound
                 music.playOgg(click);
-                // compile and run the source code file, flags don't work with rdmd
-                system(cast(const char*) ("rdmd " ~ fileName));
+
+                // if you are on Windows
+                version (Windows)
+                {
+                    // clear the terminal, the 'system()' function only takes 'const char*'
+                    system(cast(const char*) ("cls"));
+                    // compile and run the source code file, flags don't work with rdmd, the 'system()' function only takes 'const char*', notice
+                    // we put the file name between "" to work, it also requires the null character at the end
+                    system(cast(const char*) ("rdmd \"" ~ fileName ~ "\"\0"));
+                }
+                // if you are on Linux
+                else
+                {
+                    // clear the terminal, the 'system()' function only takes 'const char*'
+                    system(cast(const char*) ("clear"));
+                    // compile and run the source code file, flags don't work with rdmd, the 'system()' function only takes 'const char*', notice
+                    // we put the file name between "" to work, it also requires the null character at the end
+                    system(cast(const char*) ("rdmd \"" ~ fileName ~ "\"\0"));
+                }
             }
     },
     // register key events
@@ -225,8 +292,16 @@ void main()
     {
         // if you press Enter and you've typed the name of the file to be compiled
         if (event.pressed && event.key == Key.Enter && fileName != "")
-            // run the executable (after you've compiled it)
-            system(cast(const char*) (fileName ~ ".exe"));
+            // if you are on Windows
+            version (Windows)
+                // run the executable (after you've compiled it), the 'system()' function only takes 'const char*', notice the name must
+                // be between "" to make it work, it also requires the null character at the end
+                system(cast(const char*) ('\"' ~ fileName ~ "\"\0"));
+            // if you are on Linux
+            else
+                // run the executable (after you've compiled it), the 'system()' function only takes 'const char*', notice the name must
+                // be between "" to make it work, it also requires the null character at the end
+                system(cast(const char*) ("./\"" ~ fileName ~ "\"\0"));
     },
     // register what you've typed
     (dchar character)
