@@ -33,10 +33,10 @@ void drawBox(Rectangle box, string optionText, bool selected, ScreenPainter pain
 }
 
 // this function will allow you to select or undo the selection of a box
-void interactWithBox(string optionText, ref bool selected, ref string[] options, AudioOutputThread music, memory click)
+void interactWithBox(string optionText, ref bool selected, ref string[] options, AudioOutputThread sounds, memory click)
 {
     // play the click sound
-    music.playOgg(click);
+    sounds.playOgg(click);
 
     // if it wasn't previously selected
     if (!selected)
@@ -61,7 +61,7 @@ void main()
     // create the GUI
     SimpleWindow window = new SimpleWindow(800, 600, "DMD");
     // create the audio thread
-    AudioOutputThread music = AudioOutputThread(true);
+    AudioOutputThread sounds = AudioOutputThread(true);
     // create the 2 fonts we will use in the software
     OperatingSystemFont commandFont, optionsFont;
 
@@ -82,7 +82,7 @@ void main()
     string[] options;
     // this will store the place where the cursor will be when you type the name of the file to be compiled
     Point cursorPosition = Point(245, 200);
-    // load the sounds the GUI will play
+    // load the sounds which the GUI will play
     memory click = cast(memory) import("click.ogg"), failure = cast(memory) import("failure.ogg"), success = cast(memory) import("success.ogg");
     // create the booleans which will tell the event loop what is happening
     bool cursorShowTime, selected32bits, selected64bits, selectedAddDebugInfo, selectedDisableBoundsCheck, selectedImportFiles,
@@ -150,34 +150,34 @@ void main()
         if (event.type == MouseEventType.buttonPressed && event.button == MouseButton.left)
             // if you click on the 64 bits box
             if (_64bits.contains(Point(event.x, event.y)))
-                interactWithBox("-m64", selected64bits, options, music, click);
+                interactWithBox("-m64", selected64bits, options, sounds, click);
             // if you click on the Import modules box
             else if (importModules.contains(Point(event.x, event.y)))
-                interactWithBox("-i", selectedImportModules, options, music, click);
+                interactWithBox("-i", selectedImportModules, options, sounds, click);
             // if you click on the Import files box
             else if (importFiles.contains(Point(event.x, event.y)))
-                interactWithBox("-J.", selectedImportFiles, options, music, click);
+                interactWithBox("-J.", selectedImportFiles, options, sounds, click);
             // if you click on the Optimize box
             else if (optimized.contains(Point(event.x, event.y)))
-                interactWithBox("-O", selectedOptimize, options, music, click);
+                interactWithBox("-O", selectedOptimize, options, sounds, click);
             // if you click on the Add debug info box
             else if (addDebugInfo.contains(Point(event.x, event.y)))
-                interactWithBox("-g", selectedAddDebugInfo, options, music, click);
+                interactWithBox("-g", selectedAddDebugInfo, options, sounds, click);
             // if you click on the 32 bits box
             else if (_32bits.contains(Point(event.x, event.y)))
-                interactWithBox("-m32", selected32bits, options, music, click);
+                interactWithBox("-m32", selected32bits, options, sounds, click);
             // if you click on the Release box
             else if (release.contains(Point(event.x, event.y)))
-                interactWithBox("-release", selectedRelease, options, music, click);
+                interactWithBox("-release", selectedRelease, options, sounds, click);
             // if you click on the Inline box
             else if (inline.contains(Point(event.x, event.y)))
-                interactWithBox("-inline", selectedInline, options, music, click);
+                interactWithBox("-inline", selectedInline, options, sounds, click);
             // if you click on the Disable bounds check box
             else if (disableBoundsCheck.contains(Point(event.x, event.y)))
-                interactWithBox("-boundscheck=off", selectedDisableBoundsCheck, options, music, click);
+                interactWithBox("-boundscheck=off", selectedDisableBoundsCheck, options, sounds, click);
             // if you click on the Generate JSON box
             else if (generateJson.contains(Point(event.x, event.y)))
-                interactWithBox("-X", selectedGenerateJson, options, music, click);
+                interactWithBox("-X", selectedGenerateJson, options, sounds, click);
             // if you click on the Compile button and you've typed the name of the file to be compiled
             else if (compile.contains(Point(event.x, event.y)) && fileName != "")
             {
@@ -191,7 +191,7 @@ void main()
                 }
 
                 // play the click sound
-                music.playOgg(click);
+                sounds.playOgg(click);
                 // add the file name to the command phrase, notice we put it between "" to work in case of a compound name, such as "source 1.d"
                 commandPhrase = replace(commandPhrase, "fileName", '\"' ~ fileName ~ '\"');
                 // build the complete phrase
@@ -234,14 +234,14 @@ void main()
                     if (exists(fileName ~ ".exe"))
                     {
                         // play the success sound
-                        music.playOgg(success);
+                        sounds.playOgg(success);
                         // write in the terminal a phrase telling the user it was successful
                         writeln("Compiled successfully.");
                     }
                     // if the executable failed to be created
                     else
                         // play the failure sound
-                        music.playOgg(failure);
+                        sounds.playOgg(failure);
                 }
                 // if you are on Linux
                 else
@@ -249,14 +249,14 @@ void main()
                     if (exists(fileName))
                     {
                         // play the success sound
-                        music.playOgg(success);
+                        sounds.playOgg(success);
                         // write in the terminal a phrase telling the user it was successful
                         writeln("Compiled successfully.");
                     }
                     // if the executable failed to be created
                     else
                         // play the failure sound
-                        music.playOgg(failure);
+                        sounds.playOgg(failure);
 
                 // return the command phrase to the initial value, so it can be used again
                 commandPhrase = "dmd fileName ";
@@ -265,7 +265,7 @@ void main()
             else if (rdmd.contains(Point(event.x, event.y)) && fileName != "")
             {
                 // play the click sound
-                music.playOgg(click);
+                sounds.playOgg(click);
 
                 // if you are on Windows
                 version (Windows)
