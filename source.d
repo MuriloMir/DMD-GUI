@@ -94,7 +94,7 @@ void main()
               importFiles = Rectangle(200, 290, 220, 310),      inline = Rectangle(400, 290, 420, 310),
               optimized = Rectangle(200, 315, 220, 335),        disableBoundsCheck = Rectangle(400, 315, 420, 335),
               addDebugInfo = Rectangle(200, 340, 220, 360),     generateJson = Rectangle(400, 340, 420, 360),
-              compile = Rectangle(200, 385, 300, 425),          rdmd = Rectangle(304, 387, 361, 425);
+              compile = Rectangle(200, 375, 300, 415),          rdmd = Rectangle(304, 375, 361, 415);
 
     // start the event loop
     window.eventLoop(250,
