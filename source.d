@@ -1,5 +1,6 @@
 // This software will be a GUI for the DMD compiler.
 
+// import the tools we need
 import arsd.image : loadImageFromMemory;
 import arsd.simpleaudio : AudioOutputThread;
 import arsd.simpledisplay : Color, Image, Key, KeyEvent, MouseButton, MouseEvent, MouseEventType, OperatingSystemFont, Point, Rectangle, ScreenPainter,
@@ -150,33 +151,43 @@ void main()
         if (event.type == MouseEventType.buttonPressed && event.button == MouseButton.left)
             // if you click on the 64 bits box
             if (_64bits.contains(Point(event.x, event.y)))
+                // call the 'interactWithBox()' function to check/uncheck the -m64 box
                 interactWithBox("-m64", selected64bits, options, sounds, click);
             // if you click on the Import modules box
             else if (importModules.contains(Point(event.x, event.y)))
+                // call the 'interactWithBox()' function to check/uncheck the -i box
                 interactWithBox("-i", selectedImportModules, options, sounds, click);
             // if you click on the Import files box
             else if (importFiles.contains(Point(event.x, event.y)))
+                // call the 'interactWithBox()' function to check/uncheck the -J box
                 interactWithBox("-J.", selectedImportFiles, options, sounds, click);
             // if you click on the Optimize box
             else if (optimized.contains(Point(event.x, event.y)))
+                // call the 'interactWithBox()' function to check/uncheck the -O box
                 interactWithBox("-O", selectedOptimize, options, sounds, click);
             // if you click on the Add debug info box
             else if (addDebugInfo.contains(Point(event.x, event.y)))
+                // call the 'interactWithBox()' function to check/uncheck the -g box
                 interactWithBox("-g", selectedAddDebugInfo, options, sounds, click);
             // if you click on the 32 bits box
             else if (_32bits.contains(Point(event.x, event.y)))
+                // call the 'interactWithBox()' function to check/uncheck the -m32 box
                 interactWithBox("-m32", selected32bits, options, sounds, click);
             // if you click on the Release box
             else if (release.contains(Point(event.x, event.y)))
+                // call the 'interactWithBox()' function to check/uncheck the -release box
                 interactWithBox("-release", selectedRelease, options, sounds, click);
             // if you click on the Inline box
             else if (inline.contains(Point(event.x, event.y)))
+                // call the 'interactWithBox()' function to check/uncheck the -inline box
                 interactWithBox("-inline", selectedInline, options, sounds, click);
             // if you click on the Disable bounds check box
             else if (disableBoundsCheck.contains(Point(event.x, event.y)))
+                // call the 'interactWithBox()' function to check/uncheck the -boundscheck=off box
                 interactWithBox("-boundscheck=off", selectedDisableBoundsCheck, options, sounds, click);
             // if you click on the Generate JSON box
             else if (generateJson.contains(Point(event.x, event.y)))
+                // call the 'interactWithBox()' function to check/uncheck the -X box
                 interactWithBox("-X", selectedGenerateJson, options, sounds, click);
             // if you click on the Compile button and you've typed the name of the file to be compiled
             else if (compile.contains(Point(event.x, event.y)) && fileName != "")
