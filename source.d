@@ -57,6 +57,7 @@ void interactWithBox(string optionText, ref bool selected, ref string[] options,
     }
 }
 
+// start the software
 void main()
 {
     // create the GUI
