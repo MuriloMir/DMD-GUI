@@ -26,19 +26,16 @@ void drawBox(Rectangle box, string optionText, bool selected, ScreenPainter pain
     // if you've selected the box
     if (selected)
     {
-        // draw the first line to start the X
-        painter.drawLine(box.upperLeft(), box.lowerRight());
-        // draw the second line to complete the X
-        painter.drawLine(Point(box.right, box.top), Point(box.left, box.bottom));
+        // draw the 1st line to start the X, we subtract 1 because the right and bottom sides have 1 more pixel than necessary (something wrong with the library)
+        painter.drawLine(box.upperLeft(), Point(box.right - 1, box.bottom - 1));
+        // draw the 2nd line to complete the X, we subtract 1 because the right and bottom sides have 1 more pixel than necessary (something wrong with the library)
+        painter.drawLine(Point(box.right - 1, box.top), Point(box.left, box.bottom - 1));
     }
 }
 
 // this function will allow you to select or undo the selection of a box
 void interactWithBox(string optionText, ref bool selected, ref string[] options, AudioOutputThread sounds, memory click)
 {
-    // play the click sound
-    sounds.playOgg(click);
-
     // if it wasn't previously selected
     if (!selected)
     {
@@ -55,6 +52,9 @@ void interactWithBox(string optionText, ref bool selected, ref string[] options,
         // set its boolean to false
         selected = false;
     }
+
+    // play the click sound
+    sounds.playOgg(click);
 }
 
 // start the software
@@ -83,7 +83,7 @@ void main()
     // this array will store the options you have selected
     string[] options;
     // this will store the place where the cursor will be when you type the name of the file to be compiled
-    Point cursorPosition = Point(245, 200);
+    Point cursorPosition = Point(242, 200);
     // load the sounds which the GUI will play
     memory click = cast(memory) import("click.ogg"), failure = cast(memory) import("failure.ogg"), success = cast(memory) import("success.ogg");
     // create the booleans which will tell the event loop what is happening
@@ -112,13 +112,12 @@ void main()
 
         // if it is time to show the cursor (remember it blinks, therefore it will be displayed and omitted repeatedly)
         if (cursorShowTime)
-            // draw the cursor
-            painter.drawLine(cursorPosition, Point(cursorPosition.x, cursorPosition.y + 25));
+            // draw the cursor as a vertical bar
+            painter.drawText(cursorPosition, "|");
 
         // draw what you've typed
         painter.drawText(Point(245, 200), fileName);
-
-        // choose another font to draw the options of the boxes
+        // choose another font in order to draw the options of the boxes
         painter.setFont(optionsFont);
 
         // draw the 64 bits box
@@ -241,7 +240,6 @@ void main()
 
                 // if you are on Windows
                 version (Windows)
-                {
                     // if the executable was created successfully
                     if (exists(fileName ~ ".exe"))
                     {
@@ -254,7 +252,6 @@ void main()
                     else
                         // play the failure sound
                         sounds.playOgg(failure);
-                }
                 // if you are on Linux
                 else
                     // if the executable was created successfully
@@ -318,17 +315,13 @@ void main()
     // register what you've typed
     (dchar character)
     {
-        // if you press Backspace
-        if (character == '\b')
+        // if you've pressed Backspace and there is anything to be erased
+        if (character == '\b' && fileName != "")
         {
-            // if there is anything to be erased
-            if (fileName != "")
-            {
-                // erase the last character of the file name
-                fileName = fileName[0 .. $ - 1];
-                // update the position of the cursor
-                cursorPosition.x -= 10;
-            }
+            // erase the last character of the file name
+            fileName.length--;
+            // update the position of the cursor
+            cursorPosition.x -= 10;
         }
         // if you press any key apart from Enter and Tab
         else if (character != '\r' && character != '\n' && character != '\t')
