@@ -1,19 +1,16 @@
 // This software will be a GUI for the DMD compiler.
 
 // import the tools we need
-import arsd.image : loadImageFromMemory;
-import arsd.simpleaudio : AudioOutputThread;
-import arsd.simpledisplay : Color, Image, Key, KeyEvent, MouseButton, MouseEvent, MouseEventType, OperatingSystemFont, Point, Rectangle, ScreenPainter,
-                            SimpleWindow;
 import core.stdc.stdlib : system;
+import multimedia.audio : AudioOutputThread;
+import multimedia.display : Color, Image, Key, KeyEvent, MouseButton, MouseEvent, MouseEventType, OperatingSystemFont, Point, Rectangle, ScreenPainter,
+                            SimpleWindow;
+import multimedia.image : loadImageFromMemory, memory;
 import std.algorithm.mutation : remove;
 import std.algorithm.searching : countUntil;
 import std.array : join, replace;
 import std.file : exists;
 import std.stdio : writeln;
-
-// this is the data type for files we will be embedding into the executable, it has to be immutable because the arsd library demands it
-alias memory = immutable ubyte[];
 
 // this function will draw the box along with its option phrase
 void drawBox(Rectangle box, string optionText, bool selected, ScreenPainter painter)
