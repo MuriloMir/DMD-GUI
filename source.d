@@ -312,13 +312,17 @@ void main()
     // register what you've typed
     (dchar character)
     {
-        // if you've pressed Backspace and there is anything to be erased
-        if (character == '\b' && fileName != "")
+        // if you've pressed Backspace
+        if (character == '\b')
         {
-            // erase the last character of the file name
-            fileName.length--;
-            // update the position of the cursor
-            cursorPosition.x -= 10;
+            // if there is anything to be erased
+            if (fileName.length > 0)
+            {
+                // erase the last character of the file name
+                fileName.length--;
+                // update the position of the cursor
+                cursorPosition.x -= 10;
+            }
         }
         // if you press any key apart from Enter and Tab
         else if (character != '\r' && character != '\n' && character != '\t')
